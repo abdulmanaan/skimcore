@@ -1,6 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import Channel, Video
+from app.models import Transcript
 
 
 async def upsert_channel(
@@ -46,3 +47,23 @@ async def upsert_video(
 
     await session.flush()
     return video
+
+
+async def upsert_transcript(
+    session: AsyncSession, video: Video, data: dict
+) -> Transcript:
+    """Insert the transcript, or replace it if one already exists."""
+    result = await session.execute(
+        select(Transcript).where(Transcript.video_id == video.id)
+    )
+    transcript = result.scalar_one_or_none()
+
+    if transcript is None:
+        transcript = Transcript(video_id=video.id, **data)
+        session.add(transcript)
+    else:
+        transcript.language = data["language"]
+        transcript.segments = data["segments"]
+
+    await session.flush()
+    return transcript
