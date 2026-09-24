@@ -1,9 +1,16 @@
 import asyncio
 from app.core.db import AsyncSessionLocal
-from app.pipeline.store import upsert_channel, upsert_video
 from app.pipeline.youtube import fetch_channels, fetch_videos, search_videos
-from app.pipeline.store import upsert_channel, upsert_transcript, upsert_video
 from app.pipeline.transcript import fetch_transcript
+from app.pipeline.scoring import score_transcript, signal_score
+from app.pipeline.store import (
+    get_or_create_topic,
+    rebuild_ranks,
+    upsert_analysis,
+    upsert_channel,
+    upsert_transcript,
+    upsert_video,
+)
 
 
 async def ingest_topic(query: str, limit: int = 10) -> None:
@@ -18,6 +25,7 @@ async def ingest_topic(query: str, limit: int = 10) -> None:
     channels = await fetch_channels(channel_ids)
 
     async with AsyncSessionLocal() as session:
+        topic = await get_or_create_topic(session, query)
         stored = 0
         for v in videos:
             data = dict(v)
@@ -37,9 +45,16 @@ async def ingest_topic(query: str, limit: int = 10) -> None:
                 continue
 
             await upsert_transcript(session, video, transcript_data)
+
+            parts = score_transcript(
+                transcript_data["segments"], video.duration_seconds
+            )
+            score = signal_score(parts, video.duration_seconds)
+            await upsert_analysis(session, video, parts, score)
             stored += 1
             await asyncio.sleep(1)
 
+        await rebuild_ranks(session, topic)
         await session.commit()
 
     print(f"Stored {stored} videos with transcripts for '{query}'.")

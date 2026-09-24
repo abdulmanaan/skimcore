@@ -16,7 +16,7 @@ class Analysis(TimestampMixin, Base):
         ForeignKey("videos.id", ondelete="CASCADE"), unique=True
     )
 
-    # Signal Score aur uske hisse
+    # Signal Score and its parts
     signal_score: Mapped[float] = mapped_column(Float, index=True)
     filler_ratio: Mapped[float] = mapped_column(Float)
     first_point_seconds: Mapped[int] = mapped_column(Integer)
@@ -24,15 +24,15 @@ class Analysis(TimestampMixin, Base):
     concept_density: Mapped[float] = mapped_column(Float)
     repetition_ratio: Mapped[float] = mapped_column(Float)
 
-    # Video ka mizaj
-    video_format: Mapped[str] = mapped_column(String(40))
-    tone: Mapped[str] = mapped_column(String(40))
-    level: Mapped[str] = mapped_column(String(40))
-    pace: Mapped[str] = mapped_column(String(40))
+    # Format of video
+    video_format: Mapped[str | None] = mapped_column(String(40))
+    tone: Mapped[str | None] = mapped_column(String(40))
+    level: Mapped[str | None] = mapped_column(String(40))
+    pace: Mapped[str | None] = mapped_column(String(40))
 
-    overview: Mapped[str] = mapped_column(Text)
+    overview: Mapped[str | None] = mapped_column(Text)
     skip_if: Mapped[str | None] = mapped_column(Text)
-    model_name: Mapped[str] = mapped_column(String(80))
+    model_name: Mapped[str | None] = mapped_column(String(80))
 
     video: Mapped["Video"] = relationship(back_populates="analysis")
     key_points: Mapped[list["KeyPoint"]] = relationship(
