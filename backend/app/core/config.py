@@ -10,6 +10,7 @@ class Settings(BaseSettings):
 
     PROJECT_NAME: str = "Skimcore"
     DATABASE_URL: str
+    YOUTUBE_API_KEY: str
 
 
 settings = Settings()
